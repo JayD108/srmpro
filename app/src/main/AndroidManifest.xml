@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.srmistpro">
 
@@ -6,7 +7,7 @@
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="SRMIST Pro"
+        android:label="BunkAndChutti"
         android:theme="@style/Theme.Material3.Light.NoActionBar">
 
         <activity android:name=".InputActivity" android:exported="true">
@@ -16,9 +17,15 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".PortalLoginActivity" android:exported="false" />
-
         <activity android:name=".MainActivity" android:exported="false"/>
-        <activity android:name=".TimeMachineActivity" android:exported="false"/>
+
+        <activity android:name=".PortalLoginActivity" android:exported="false"/>
+
+        <activity android:name=".TimeMachineActivity" android:exported="false"
+            android:theme="@style/Theme.Material3.Dark.NoActionBar"/>
+
+        <activity android:name=".SemForecastActivity" android:exported="false"
+            android:theme="@style/Theme.Material3.Dark.NoActionBar"/>
+
     </application>
 </manifest>

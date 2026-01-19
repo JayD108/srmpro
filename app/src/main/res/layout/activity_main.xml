@@ -1,114 +1,204 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F0F2F5">
+    android:background="@drawable/bg_space_gradient">
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="60dp">
+        android:layout_marginBottom="70dp"
+        android:clipToPadding="false"
+        android:paddingBottom="20dp">
 
         <LinearLayout
             android:id="@+id/mainContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="10dp">
+            android:padding="16dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Dashboard"
+                    android:textSize="28sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"/>
+
+                <ImageView
+                    android:id="@+id/btnAppInfo"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@android:drawable/ic_menu_info_details"
+                    app:tint="#00E5FF"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"/>
+            </RelativeLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:weightSum="2">
+                android:background="@drawable/bg_glass_card"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:layout_marginBottom="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Attendance Overview"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#00E5FF"
+                    android:layout_marginBottom="10dp"/>
 
                 <com.github.mikephil.charting.charts.BarChart
                     android:id="@+id/barChart"
-                    android:layout_width="0dp"
-                    android:layout_height="200dp"
-                    android:layout_weight="1.2"
-                    android:background="@android:color/white"
-                    android:elevation="2dp"/>
+                    android:layout_width="match_parent"
+                    android:layout_height="220dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_glass_card"
+                android:orientation="vertical"
+                android:layout_marginBottom="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="15dp">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Subject Report"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:textSize="16sp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Goal: 75%"
+                        android:textColor="#FFD740"
+                        android:textStyle="bold"
+                        android:textSize="14sp"/>
+                </LinearLayout>
+
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#22FFFFFF"/>
+
+                <TableLayout
+                    android:id="@+id/tableLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="5dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_glass_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Total Analytics"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#D500F9"
+                    android:layout_marginBottom="10dp"/>
 
                 <com.github.mikephil.charting.charts.PieChart
                     android:id="@+id/pieChart"
-                    android:layout_width="0dp"
-                    android:layout_height="200dp"
-                    android:layout_weight="0.8"
-                    android:background="@android:color/white"
-                    android:layout_marginStart="8dp"
-                    android:elevation="2dp"/>
+                    android:layout_width="match_parent"
+                    android:layout_height="250dp"/>
             </LinearLayout>
-
-            <TextView
-                android:id="@+id/lblTable"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Course Wise Attendance"
-                android:padding="10dp"
-                android:background="#3F51B5"
-                android:textColor="#FFF"
-                android:layout_marginTop="16dp"/>
-
-            <TableLayout
-                android:id="@+id/tableLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@android:color/white"
-                android:stretchColumns="1">
-            </TableLayout>
-
-            <TextView
-                android:id="@+id/lblTimeMachine"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="🔮 Time Machine Results"
-                android:padding="10dp"
-                android:background="#673AB7"
-                android:textColor="#FFF"
-                android:layout_marginTop="16dp"
-                android:visibility="gone"/>
-
-            <TextView
-                android:id="@+id/txtTimeMachineResult"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="10dp"
-                android:background="#FFF"
-                android:visibility="gone"/>
-
         </LinearLayout>
     </ScrollView>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="65dp"
         android:layout_alignParentBottom="true"
-        android:background="@android:color/white"
-        android:elevation="8dp">
+        android:background="#E6121212"
+        android:gravity="center_vertical"
+        android:weightSum="3">
 
-        <Button
+        <LinearLayout
             android:id="@+id/btnNavDash"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="match_parent"
-            android:text="Dashboard"
-            style="@style/Widget.MaterialComponents.Button.TextButton"/>
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_compass"
+                app:tint="#00E5FF"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Home"
+                android:textSize="10sp"
+                android:textColor="#00E5FF"/>
+        </LinearLayout>
 
-        <Button
+        <LinearLayout
             android:id="@+id/btnNavTime"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="match_parent"
-            android:text="Time Machine"
-            style="@style/Widget.MaterialComponents.Button.TextButton"/>
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_recent_history"
+                app:tint="#888"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Time Machine"
+                android:textSize="10sp"
+                android:textColor="#888"/>
+        </LinearLayout>
 
-        <Button
+        <LinearLayout
             android:id="@+id/btnNavSem"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="match_parent"
-            android:text="Sem Forecast"
-            style="@style/Widget.MaterialComponents.Button.TextButton"/>
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_my_calendar"
+                app:tint="#888"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Forecast"
+                android:textSize="10sp"
+                android:textColor="#888"/>
+        </LinearLayout>
     </LinearLayout>
 </RelativeLayout>

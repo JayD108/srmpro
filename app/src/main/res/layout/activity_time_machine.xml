@@ -1,124 +1,234 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#121212"
-    android:padding="16dp">
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="🕰️ Time Machine Pro"
-        android:textColor="#FFF"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="📅 Manage Planned Leaves"
-        android:textColor="#4CAF50"
-        android:textStyle="bold"
-        android:layout_marginTop="10dp"/>
-
-    <Button
-        android:id="@+id/btnBookLeave"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="➕ Add Planned Leave (Booking)"
-        android:backgroundTint="#333"
-        android:textColor="#FFF"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-    <TextView
-        android:id="@+id/txtBookedSummary"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="No leaves booked."
-        android:textColor="#AAA"
-        android:textSize="12sp"
-        android:layout_marginBottom="16dp"/>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#333"
-        android:layout_marginBottom="16dp"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="🚀 Simulation Range (Assume Absent)"
-        android:textColor="#2196F3"
-        android:textStyle="bold"/>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="2"
-        android:layout_marginTop="8dp">
-
-        <Button
-            android:id="@+id/btnStartDate"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="Start"
-            android:layout_marginEnd="4dp"/>
-
-        <Button
-            android:id="@+id/btnEndDate"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="End"
-            android:layout_marginStart="4dp"/>
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginTop="10dp">
-
-        <TextView
-            android:id="@+id/lblTarget"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Target: 75%"
-            android:textColor="#FFF"
-            android:layout_marginEnd="10dp"/>
-
-        <SeekBar
-            android:id="@+id/seekTarget"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="100"
-            android:progress="75"/>
-    </LinearLayout>
-
-    <Button
-        android:id="@+id/btnRunSim"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="RUN SIMULATION"
-        android:backgroundTint="#6200EE"
-        android:layout_marginTop="10dp"/>
+    android:background="@drawable/bg_space_gradient">
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="10dp">
+        android:padding="20dp"
+        android:clipToPadding="false">
 
         <LinearLayout
-            android:id="@+id/resultsContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"/>
+            android:orientation="vertical">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="30dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_centerInParent="true"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="TIME TRAVEL"
+                        android:textColor="#00E5FF"
+                        android:textSize="14sp"
+                        android:letterSpacing="0.2"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Simulation Deck"
+                        android:textColor="#FFFFFF"
+                        android:textSize="32sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/btnInfo"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@android:drawable/ic_menu_info_details"
+                    app:tint="#00E5FF"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"/>
+            </RelativeLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardBackgroundColor="#26000000"
+                app:cardCornerRadius="20dp"
+                app:strokeColor="#33FFFFFF"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="PLANNED LEAVES"
+                        android:textColor="#FFEB3B"
+                        android:textSize="12sp"
+                        android:letterSpacing="0.1"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Select dates you know you'll miss."
+                        android:textColor="#AAAAAA"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="15dp"/>
+
+                    <LinearLayout
+                        android:id="@+id/layoutBookedList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginBottom="10dp"/>
+
+                    <Button
+                        android:id="@+id/btnBookLeave"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:text="+ Add Date Range"
+                        android:backgroundTint="#33FFFFFF"
+                        android:textColor="#FFF"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="#FFFFFF"
+                        app:strokeWidth="1dp"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="30dp"
+                app:cardBackgroundColor="#26000000"
+                app:cardCornerRadius="20dp"
+                app:strokeColor="#33FFFFFF"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="SIMULATION PARAMETERS"
+                        android:textColor="#00E5FF"
+                        android:textSize="12sp"
+                        android:letterSpacing="0.1"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Define the simulation range."
+                        android:textColor="#AAAAAA"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="20dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="2">
+
+                        <Button
+                            android:id="@+id/btnStartDate"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="60dp"
+                            android:text="Start"
+                            android:backgroundTint="#1AFFFFFF"
+                            android:textColor="#FFF"
+                            app:cornerRadius="12dp"
+                            android:layout_marginEnd="8dp"/>
+
+                        <Button
+                            android:id="@+id/btnEndDate"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="60dp"
+                            android:text="End"
+                            android:backgroundTint="#1AFFFFFF"
+                            android:textColor="#FFF"
+                            app:cornerRadius="12dp"
+                            android:layout_marginStart="8dp"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="25dp">
+
+                        <TextView
+                            android:id="@+id/lblTarget"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Safe: 75%"
+                            android:textColor="#FFF"
+                            android:textStyle="bold"
+                            android:layout_marginEnd="15dp"/>
+
+                        <SeekBar
+                            android:id="@+id/seekTarget"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:max="100"
+                            android:progress="75"
+                            android:progressTint="#00E5FF"
+                            android:thumbTint="#00E5FF"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnRunSim"
+                android:layout_width="match_parent"
+                android:layout_height="65dp"
+                android:text="INITIATE LAUNCH 🚀"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#FFF"
+                android:background="@drawable/bg_neon_button"
+                android:layout_marginBottom="40dp"/>
+
+            <LinearLayout
+                android:id="@+id/resultsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="50dp"/>
+
+        </LinearLayout>
     </ScrollView>
 
-</LinearLayout>
+    <TextView
+        android:id="@+id/rocketView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🚀"
+        android:textSize="80sp"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:visibility="gone"/>
+
+</RelativeLayout>

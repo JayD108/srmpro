@@ -1,17 +1,22 @@
 package com.example.srmistpro;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
+import android.view.animation.AccelerateInterpolator;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.srmistpro.AppData;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.time.LocalDate;
@@ -27,144 +32,189 @@ public class TimeMachineActivity extends AppCompatActivity {
     private int targetPct = 75;
 
     // UI Elements
-    private Button btnStart, btnEnd, btnBook;
-    private TextView lblTarget, txtBookSummary;
-    private LinearLayout resultsContainer;
+    private Button btnStart, btnEnd;
+    private TextView lblTarget, rocketView;
+    private LinearLayout resultsContainer, layoutBookedList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_time_machine);
 
-        // Load Data
         String json = getIntent().getStringExtra("data");
-        subjects = new Gson().fromJson(json, new TypeToken<List<AppData.Subject>>(){}.getType());
+        if (json != null) {
+            subjects = new Gson().fromJson(json, new TypeToken<List<AppData.Subject>>(){}.getType());
+        }
 
-        // Init UI
         btnStart = findViewById(R.id.btnStartDate);
         btnEnd = findViewById(R.id.btnEndDate);
-        btnBook = findViewById(R.id.btnBookLeave);
         lblTarget = findViewById(R.id.lblTarget);
-        txtBookSummary = findViewById(R.id.txtBookedSummary);
-        SeekBar seekBar = findViewById(R.id.seekTarget);
+        layoutBookedList = findViewById(R.id.layoutBookedList);
         resultsContainer = findViewById(R.id.resultsContainer);
+        rocketView = findViewById(R.id.rocketView);
+        SeekBar seekBar = findViewById(R.id.seekTarget);
 
-        // Default Dates
+        rocketView.setRotation(-45f);
+
+        // Default Simulation Range
         simStart = LocalDate.now().plusDays(1);
         simEnd = LocalDate.now().plusDays(7);
         updateDateLabels();
+        refreshBookedList();
 
-        // --- LISTENERS ---
         btnStart.setOnClickListener(v -> pickDate(true));
         btnEnd.setOnClickListener(v -> pickDate(false));
-        btnBook.setOnClickListener(v -> showBookingDialog());
+        findViewById(R.id.btnBookLeave).setOnClickListener(v -> showBookingDialog());
+        findViewById(R.id.btnRunSim).setOnClickListener(v -> launchRocketAnimation());
 
-        findViewById(R.id.btnRunSim).setOnClickListener(v -> runSimulation());
+        // --- INFO BUTTON LOGIC ---
+        findViewById(R.id.btnInfo).setOnClickListener(v -> showInfoDialog());
 
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar s, int p, boolean b) {
                 targetPct = p;
-                lblTarget.setText("Target: " + p + "%");
+                lblTarget.setText("Safe: " + p + "%");
             }
             @Override public void onStartTrackingTouch(SeekBar s) {}
             @Override public void onStopTrackingTouch(SeekBar s) {}
         });
     }
 
-    // --- BOOKING DIALOG ---
-    private void showBookingDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Add Planned Leave");
-
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(50, 20, 50, 20);
-
-        final TextView tvInfo = new TextView(this);
-        tvInfo.setText("Select dates you plan to miss (e.g. Vacation).");
-        layout.addView(tvInfo);
-
-        // Simple Inputs for Start/End (Using Buttons in a real app, simplified here)
-        final EditText etReason = new EditText(this);
-        etReason.setHint("Reason (e.g. Wedding)");
-        layout.addView(etReason);
-
-        builder.setView(layout);
-
-        // Note: For simplicity, this dialog assumes picking dates via a secondary logic or just "Next 2 days".
-        // To keep code concise, I will launch a Double Date Picker here.
-        builder.setPositiveButton("Select Dates", (dialog, which) -> {
-            // Launch Date Picker for Start
-            DatePickerDialog dpd = new DatePickerDialog(this, (view, y, m, d) -> {
-                LocalDate s = LocalDate.of(y, m+1, d);
-                // Immediately launch End Date Picker
-                new DatePickerDialog(this, (view2, y2, m2, d2) -> {
-                    LocalDate e = LocalDate.of(y2, m2+1, d2);
-                    String r = etReason.getText().toString();
-
-                    AppData.plannedLeaves.add(new AppData.PlannedLeave(s, e, r.isEmpty() ? "Planned" : r));
-                    updateBookingSummary();
-
-                }, s.getYear(), s.getMonthValue()-1, s.getDayOfMonth()).show();
-            }, LocalDate.now().getYear(), LocalDate.now().getMonthValue()-1, LocalDate.now().getDayOfMonth());
-            dpd.setMessage("Select Start Date");
-            dpd.show();
-        });
-
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
+    private void showInfoDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("How Calculation Works 🧮")
+                .setMessage("1. We start with your current attendance.\n\n" +
+                        "2. We project classes from Tomorrow until your chosen End Date.\n\n" +
+                        "3. ASSUMPTION: You attend ALL future classes, EXCEPT:\n" +
+                        "   - Dates you explicitly marked as 'Planned Leaves'.\n" +
+                        "   - Dates inside the Simulation Range (if checking 'what if I miss this week').\n\n" +
+                        "4. HOLIDAYS: If a Planned Leave falls on a College Holiday (e.g. Holi), it is NOT counted as missed. It is 'Saved by Holiday'.")
+                .setPositiveButton("Got it", null)
+                .show();
     }
 
-    private void updateBookingSummary() {
-        if (AppData.plannedLeaves.isEmpty()) {
-            txtBookSummary.setText("No leaves booked.");
-        } else {
-            StringBuilder sb = new StringBuilder();
-            for (AppData.PlannedLeave l : AppData.plannedLeaves) {
-                sb.append("• ").append(l.start).append(" to ").append(l.end).append(" (").append(l.reason).append(")\n");
+    private void launchRocketAnimation() {
+        rocketView.setTranslationY(0f);
+        rocketView.setVisibility(View.VISIBLE);
+        resultsContainer.removeAllViews();
+
+        float screenHeight = getResources().getDisplayMetrics().heightPixels;
+        ObjectAnimator animator = ObjectAnimator.ofFloat(rocketView, "translationY", 0f, -screenHeight);
+        animator.setDuration(600);
+        animator.setInterpolator(new AccelerateInterpolator());
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                rocketView.setVisibility(View.GONE);
+                runSimulation();
             }
-            txtBookSummary.setText(sb.toString().trim());
+        });
+        animator.start();
+    }
+
+    private void showBookingDialog() {
+        DatePickerDialog dpd = new DatePickerDialog(this, (view, y, m, d) -> {
+            LocalDate s = LocalDate.of(y, m+1, d);
+            DatePickerDialog dpd2 = new DatePickerDialog(this, (view2, y2, m2, d2) -> {
+                LocalDate e = LocalDate.of(y2, m2+1, d2);
+                if(e.isBefore(s)) {
+                    Toast.makeText(this, "Invalid Date Range", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                AppData.plannedLeaves.add(new AppData.PlannedLeave(s, e, "Planned"));
+                refreshBookedList();
+            }, s.getYear(), s.getMonthValue()-1, s.getDayOfMonth());
+            dpd2.setTitle("Select End Date");
+            dpd2.show();
+        }, LocalDate.now().getYear(), LocalDate.now().getMonthValue()-1, LocalDate.now().getDayOfMonth());
+        dpd.setTitle("Select Start Date");
+        dpd.show();
+    }
+
+    private void refreshBookedList() {
+        layoutBookedList.removeAllViews();
+        if (AppData.plannedLeaves.isEmpty()) {
+            TextView tv = new TextView(this);
+            tv.setText("No leaves added yet.");
+            tv.setTextColor(Color.parseColor("#88FFFFFF"));
+            layoutBookedList.addView(tv);
+            return;
+        }
+
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd MMM");
+        for (int i = 0; i < AppData.plannedLeaves.size(); i++) {
+            AppData.PlannedLeave l = AppData.plannedLeaves.get(i);
+            TextView tv = new TextView(this);
+            tv.setText("📅 " + l.start.format(fmt) + " - " + l.end.format(fmt));
+            tv.setTextColor(Color.parseColor("#FFAB91"));
+            tv.setBackgroundColor(Color.parseColor("#33FFFFFF"));
+            tv.setPadding(30, 20, 30, 20);
+            tv.setTextSize(14f);
+
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+            lp.setMargins(0, 0, 0, 15);
+            tv.setLayoutParams(lp);
+
+            int finalI = i;
+            tv.setOnClickListener(v -> {
+                AppData.plannedLeaves.remove(finalI);
+                refreshBookedList();
+            });
+            layoutBookedList.addView(tv);
         }
     }
 
-    // --- SIMULATION LOGIC ---
     private void runSimulation() {
-        resultsContainer.removeAllViews();
+        if (simEnd.isBefore(simStart)) {
+            Toast.makeText(this, "Check your dates!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         LocalDate today = LocalDate.now();
-
-        // We iterate from Tomorrow until Simulation End
-        // Phase 1: Growth (Tomorrow -> SimStart-1) -> We ATTEND these (unless booked or holiday)
-        // Phase 2: Simulation (SimStart -> SimEnd) -> We MISS these (unless holiday)
-
-        Map<String, Integer> growthAttended = new HashMap<>();
+        // Counter Buckets
+        Map<String, Integer> futureAttended = new HashMap<>();
         Map<String, Integer> bookedMissed = new HashMap<>();
         Map<String, Integer> simMissed = new HashMap<>();
         Map<String, Integer> holidaySaved = new HashMap<>();
 
+        // Loop from Tomorrow until End of Simulation Range (or Semester End if you prefer)
+        // User requested: "Assumes I will do all classes... except these"
+        // Since this is "Time Machine" (Simulation), we project until the END of the specific range selected.
         LocalDate curr = today.plusDays(1);
 
         while (!curr.isAfter(simEnd)) {
-            // Check if valid class day
+            // Check if timetable has classes for this day
             if (AppData.TIMETABLE.containsKey(curr.getDayOfWeek())) {
                 List<String> classes = AppData.TIMETABLE.get(curr.getDayOfWeek());
 
-                boolean isHoliday = AppData.HOLIDAYS.contains(curr);
-                boolean isBooked = AppData.isDateBooked(curr);
-                boolean isSimRange = !curr.isBefore(simStart) && !curr.isAfter(simEnd);
+                // PRIORITY 1: IS IT A HOLIDAY?
+                if (AppData.HOLIDAYS.contains(curr)) {
+                    // It's a holiday. Even if you booked a leave, you are saved.
+                    // If you booked a leave, we count it as "Saved by Holiday"
+                    if (AppData.isDateBooked(curr)) {
+                        for (String code : classes) {
+                            holidaySaved.put(code, holidaySaved.getOrDefault(code, 0) + 1);
+                        }
+                    }
+                    // If not booked, it's just a normal holiday, no attendance impact.
+                }
+                // PRIORITY 2: IS IT BOOKED OR SIMULATED ABSENT?
+                else {
+                    boolean isBooked = AppData.isDateBooked(curr);
+                    boolean isSimRange = !curr.isBefore(simStart) && !curr.isAfter(simEnd);
 
-                for (String code : classes) {
-                    if (isHoliday) {
-                        holidaySaved.put(code, holidaySaved.getOrDefault(code, 0) + 1);
+                    if (isBooked) {
+                        for (String code : classes)
+                            bookedMissed.put(code, bookedMissed.getOrDefault(code, 0) + 1);
                     } else if (isSimRange) {
-                        // In Simulation Range -> We Miss
-                        simMissed.put(code, simMissed.getOrDefault(code, 0) + 1);
-                    } else if (isBooked) {
-                        // Booked Leave -> We Miss
-                        bookedMissed.put(code, bookedMissed.getOrDefault(code, 0) + 1);
+                        // If checking "What if I miss this week?", count as Sim Missed
+                        for (String code : classes)
+                            simMissed.put(code, simMissed.getOrDefault(code, 0) + 1);
                     } else {
-                        // Normal Day -> We Attend
-                        growthAttended.put(code, growthAttended.getOrDefault(code, 0) + 1);
+                        // PRIORITY 3: ASSUME ATTENDED
+                        for (String code : classes)
+                            futureAttended.put(code, futureAttended.getOrDefault(code, 0) + 1);
                     }
                 }
             }
@@ -173,60 +223,66 @@ public class TimeMachineActivity extends AppCompatActivity {
 
         // GENERATE CARDS
         for (AppData.Subject s : subjects) {
-            int gVal = growthAttended.getOrDefault(s.code, 0);
+            int gVal = futureAttended.getOrDefault(s.code, 0);
             int bVal = bookedMissed.getOrDefault(s.code, 0);
             int sVal = simMissed.getOrDefault(s.code, 0);
             int hVal = holidaySaved.getOrDefault(s.code, 0);
 
-            // Calculate New Stats
+            int alreadyMissed = s.total - s.attended;
+
             int newAttended = s.attended + gVal;
-            // Total increases by everything except holidays (assuming holidays don't count to total classes held)
+            // Total = Attended + (Booked Missed) + (Sim Missed)
+            // Holidays do NOT add to total classes
             int newTotal = s.total + gVal + bVal + sVal;
 
             float newPct = (newTotal == 0) ? 0 : ((float) newAttended / newTotal) * 100;
-            int alreadyMissed = s.total - s.attended;
 
-            // --- UI CARD CREATION ---
-            addResultCard(s, newPct, alreadyMissed, hVal, sVal + bVal);
+            addResultCard(s, newPct, alreadyMissed, bVal + sVal, hVal);
         }
     }
 
-    private void addResultCard(AppData.Subject s, float projPct, int alreadyMissed, int holidays, int totalLeaveMissed) {
+    private void addResultCard(AppData.Subject s, float projPct, int alreadyMissed, int leaveMissing, int holidaySaved) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setBackgroundColor(Color.parseColor("#1E1E1E"));
-        card.setPadding(30, 30, 30, 30);
+        card.setBackgroundColor(Color.parseColor("#26000000"));
+        card.setPadding(40, 40, 40, 40);
+
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
-        lp.setMargins(0, 0, 0, 20);
+        lp.setMargins(0, 0, 0, 25);
         card.setLayoutParams(lp);
 
-        // Header: Code + Name
         TextView tvHeader = new TextView(this);
-        tvHeader.setText(s.code + " : " + s.name); // Using Name from Image
-        tvHeader.setTextSize(16f);
+        tvHeader.setText(s.name);
+        tvHeader.setTextSize(18f);
         tvHeader.setTextColor(Color.WHITE);
         tvHeader.setTypeface(null, android.graphics.Typeface.BOLD);
 
-        // Body: Details
-        TextView tvBody = new TextView(this);
-        String status = projPct >= targetPct ? "✅" : "❌";
+        TextView tvStatus = new TextView(this);
+        String emoji = projPct >= targetPct ? "✅ Safe" : "❌ Critical";
+        int color = projPct >= targetPct ? Color.parseColor("#00E676") : Color.parseColor("#FF5252");
 
-        String sb = String.format(
-                "Current: %.1f%%\n" +
-                        "Missed Already: %d classes\n" +
-                        "Official Holidays: %d\n" +
-                        "Classes in this Leave: %d\n" +
-                        "Projected: %.1f%%  %s",
-                s.getPercentage(), alreadyMissed, holidays, totalLeaveMissed, projPct, status
-        );
+        tvStatus.setText(String.format("%.1f%%  %s", projPct, emoji));
+        tvStatus.setTextColor(color);
+        tvStatus.setTextSize(22f);
+        tvStatus.setPadding(0, 5, 0, 20);
 
-        tvBody.setText(sb);
-        tvBody.setTextColor(Color.LTGRAY);
-        tvBody.setTextSize(14f);
-        tvBody.setPadding(0, 10, 0, 0);
+        TextView tvDetails = new TextView(this);
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("• Already Missed: ").append(alreadyMissed).append("\n");
+        sb.append("• Leave Missing: ").append(leaveMissing).append("\n");
+        if (holidaySaved > 0) {
+            sb.append("• Saved by Holiday: ").append(holidaySaved).append(" 🎉\n");
+        }
+
+        tvDetails.setText(sb.toString().trim());
+        tvDetails.setTextColor(Color.parseColor("#BBBBBB"));
+        tvDetails.setTextSize(13f);
+        tvDetails.setLineSpacing(0, 1.3f);
 
         card.addView(tvHeader);
-        card.addView(tvBody);
+        card.addView(tvStatus);
+        card.addView(tvDetails);
         resultsContainer.addView(card);
     }
 

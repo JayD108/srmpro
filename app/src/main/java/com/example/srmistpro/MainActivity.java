@@ -3,25 +3,18 @@ package com.example.srmistpro;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
-import android.widget.LinearLayout;
-import android.widget.SeekBar;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.data.*;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -29,176 +22,248 @@ public class MainActivity extends AppCompatActivity {
     private BarChart barChart;
     private PieChart pieChart;
     private TableLayout tableLayout;
-    private TextView txtResult, lblResult;
+
+    // Default Target for Status Calculation
+    private final int currentTargetPct = 75;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // 1. Initialize Views
         barChart = findViewById(R.id.barChart);
         pieChart = findViewById(R.id.pieChart);
         tableLayout = findViewById(R.id.tableLayout);
-        txtResult = findViewById(R.id.txtTimeMachineResult);
-        lblResult = findViewById(R.id.lblTimeMachine);
 
+        // 2. Load Data passed from Input/Login Activity
         String json = getIntent().getStringExtra("data");
-        subjects = new Gson().fromJson(json, new TypeToken<List<AppData.Subject>>(){}.getType());
+        if (json != null) {
+            subjects = new Gson().fromJson(json, new TypeToken<List<AppData.Subject>>(){}.getType());
+        } else {
+            subjects = new ArrayList<>();
+        }
 
+        // 3. Render Dashboard
         setupDashboard();
 
-        findViewById(R.id.btnNavDash).setOnClickListener(v -> resetToDashboard());
+        // 4. Bottom Navigation Listeners
 
-        // --- 1. OPEN TIME MACHINE ACTIVITY ---
+        // Dashboard Button (Already Here)
+        findViewById(R.id.btnNavDash).setOnClickListener(v ->
+                Toast.makeText(this, "Refreshing...", Toast.LENGTH_SHORT).show()
+        );
+
+        // Time Machine Button
         findViewById(R.id.btnNavTime).setOnClickListener(v -> {
             Intent i = new Intent(this, TimeMachineActivity.class);
             i.putExtra("data", new Gson().toJson(subjects));
             startActivity(i);
         });
 
-        // --- 2. OPEN FORECAST DIALOG ---
-        findViewById(R.id.btnNavSem).setOnClickListener(v -> showForecastDialog());
-    }
-
-    private void resetToDashboard() {
-        lblResult.setVisibility(View.GONE);
-        txtResult.setVisibility(View.GONE);
-    }
-
-    private void showForecastDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("📅 Semester Forecast");
-
-        // Create Slider UI inside Dialog
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(50, 20, 50, 20);
-
-        final TextView tvLabel = new TextView(this);
-        tvLabel.setText("Required Attendance: 75%");
-        tvLabel.setTextSize(16f);
-
-        SeekBar seekBar = new SeekBar(this);
-        seekBar.setMax(100);
-        seekBar.setProgress(75);
-
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                tvLabel.setText("Required Attendance: " + i + "%");
-            }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        // Forecast Button
+        findViewById(R.id.btnNavSem).setOnClickListener(v -> {
+            Intent i = new Intent(this, SemForecastActivity.class);
+            i.putExtra("data", new Gson().toJson(subjects));
+            startActivity(i);
         });
-
-        layout.addView(tvLabel);
-        layout.addView(seekBar);
-        builder.setView(layout);
-
-        builder.setPositiveButton("Calculate", (dialog, which) -> {
-            runSemForecast(seekBar.getProgress());
+        // --- INFO BUTTON ---
+        findViewById(R.id.btnAppInfo).setOnClickListener(v -> {
+            new android.app.AlertDialog.Builder(this)
+                    .setTitle("Bunk & Chutti")
+                    .setMessage("Created by: Mrityunjay\n\nDaba ke karo bunk")
+                    .setPositiveButton("Awesome", null)
+                    .show();
         });
-
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
     }
 
-// Paste this inside MainActivity.java, replacing the old runSemForecast method
-
-    private void runSemForecast(int targetPct) {
-        lblResult.setVisibility(View.VISIBLE);
-        lblResult.setText("📅 Semester Forecast (Target: " + targetPct + "%)");
-        txtResult.setVisibility(View.VISIBLE);
-
-        LocalDate today = LocalDate.now();
-
-        // 1. Get Official Future Classes (Excludes Holidays, Includes your Leaves)
-        // This is needed to know the TOTAL classes that will be held.
-        Map<String, Integer> futureOfficial = AppData.getOfficialScheduleCounts(today.plusDays(1), AppData.SEMESTER_END);
-
-        StringBuilder sb = new StringBuilder();
-
-        for(AppData.Subject s : subjects) {
-            int futureClassesCount = futureOfficial.getOrDefault(s.code, 0);
-
-            // GRAND TOTAL = Current Total + Future Official
-            int grandTotal = s.total + futureClassesCount;
-
-            // CALCULATE MAX BUNKS
-            // Formula: Max Absent = GrandTotal * (100 - Target)%
-            int maxAbsentAllowed = (int) (grandTotal * (1.0 - (targetPct / 100.0)));
-
-            // Current Absent
-            int currentAbsent = s.total - s.attended;
-
-            // SKIPS LEFT = Max Allowed - Already Missed
-            int skipsLeft = maxAbsentAllowed - currentAbsent;
-
-            // Build Output
-            sb.append(String.format("📘 %s\n", s.code));
-            sb.append(String.format("   Total Sem Classes: %d\n", grandTotal)); // <--- REQUESTED FEATURE
-            sb.append(String.format("   Max Bunks Allowed: %d\n", maxAbsentAllowed));
-
-            if (skipsLeft > 0) {
-                sb.append(String.format("   ✅ Safe! Can skip %d more.\n\n", skipsLeft));
-            } else {
-                int mustAttend = (currentAbsent - maxAbsentAllowed);
-                // Simplified logic: If negative skips, you are in trouble.
-                sb.append(String.format("   ❌ CRITICAL! Over limit by %d classes.\n\n", Math.abs(skipsLeft)));
-            }
-        }
-        txtResult.setText(sb.toString());
-    }
     private void setupDashboard() {
-        // ... (Same as previous response, copy-paste the chart setup here) ...
-        // Re-paste the chart code from the previous Main Activity snippet I gave you
-        // to keep this file complete.
+        tableLayout.removeAllViews();
+        barChart.clear();
+        pieChart.clear();
+
         ArrayList<BarEntry> entries = new ArrayList<>();
-        int totalAttended = 0, totalClasses = 0;
-        addTableRow("Code", "Att.", "Max", "%", true);
+        ArrayList<String> labels = new ArrayList<>();
+        ArrayList<PieEntry> pieEntries = new ArrayList<>();
+
+        int grandTotalAttended = 0;
+        int grandTotalClasses = 0;
+
+        // --- TABLE HEADER ---
+        // Columns: Subject | Att | Abs | Tot | % | Stat
+        addTableRow("Subject", "Att", "Abs", "Tot", "%", "Stat", true);
 
         for (int i = 0; i < subjects.size(); i++) {
             AppData.Subject s = subjects.get(i);
+            int missed = s.total - s.attended;
+
+            grandTotalAttended += s.attended;
+            grandTotalClasses += s.total;
+
+            // Chart Data
             entries.add(new BarEntry(i, s.getPercentage()));
-            totalAttended += s.attended;
-            totalClasses += s.total;
-            addTableRow(s.code, String.valueOf(s.attended), String.valueOf(s.total), String.format("%.1f", s.getPercentage()), false);
+
+            // Abbreviate name for Chart Labels (e.g., "Artificial..." -> "Artif...")
+            String shortName = s.name.length() > 8 ? s.name.substring(0, 8) + ".." : s.name;
+            labels.add(shortName);
+
+            // --- SMART STATUS CALCULATION ---
+            // Formula to determine + (Bunks Left) or - (Classes Needed)
+            String statusStr;
+            float targetRatio = currentTargetPct / 100.0f;
+
+            // Logic: How many can I skip and stay >= 75%?
+            int maxTotal = (int) (s.attended / targetRatio);
+            int canSkip = maxTotal - s.total;
+
+            // Logic: How many must I attend to reach 75%?
+            int mustAttend = (int) Math.ceil((targetRatio * s.total - s.attended) / (1.0 - targetRatio));
+
+            if (s.getPercentage() >= currentTargetPct) {
+                statusStr = "+" + canSkip; // Green Positive
+            } else {
+                statusStr = "-" + (mustAttend > 0 ? mustAttend : 0); // Red Negative
+            }
+
+            // --- ADD ROW ---
+            String subjectDisplay = s.name + "\n(" + s.code + ")";
+            addTableRow(subjectDisplay,
+                    String.valueOf(s.attended),
+                    String.valueOf(missed),
+                    String.valueOf(s.total),
+                    String.format("%.0f%%", s.getPercentage()),
+                    statusStr,
+                    false);
         }
 
-        BarDataSet barSet = new BarDataSet(entries, "Attendance %");
-        barSet.setColor(Color.parseColor("#5C6BC0"));
-        barSet.setValueTextColor(Color.BLACK);
-        BarData barData = new BarData(barSet);
-        barChart.setData(barData);
-        barChart.invalidate();
-
-        ArrayList<PieEntry> pieEntries = new ArrayList<>();
-        pieEntries.add(new PieEntry(totalAttended, "Present"));
-        pieEntries.add(new PieEntry(totalClasses - totalAttended, "Absent"));
-        PieDataSet pieSet = new PieDataSet(pieEntries, "");
-        pieSet.setColors(Color.parseColor("#4CAF50"), Color.parseColor("#FF9800"));
-        PieData pieData = new PieData(pieSet);
-        pieChart.setData(pieData);
-        pieChart.invalidate();
+        // Setup Charts
+        setupCharts(grandTotalAttended, grandTotalClasses, entries, labels, pieEntries);
     }
 
-    private void addTableRow(String c1, String c2, String c3, String c4, boolean isHeader) {
+    private void addTableRow(String c1, String c2, String c3, String c4, String c5, String c6, boolean isHeader) {
         TableRow row = new TableRow(this);
-        row.setPadding(10, 20, 10, 20);
-        if(isHeader) row.setBackgroundColor(Color.LTGRAY);
-        row.addView(createTextView(c1, isHeader));
-        row.addView(createTextView(c2, isHeader));
-        row.addView(createTextView(c3, isHeader));
-        row.addView(createTextView(c4 + (isHeader ? "" : "%"), isHeader));
+        // Padding for the row
+        row.setPadding(0, 25, 0, 25);
+
+        // Transparent background for Glass Effect
+        row.setBackgroundColor(Color.TRANSPARENT);
+
+        // Column 1: Subject Name (Weight 2)
+        row.addView(createTextView(c1, isHeader, 2f, true));
+        // Columns 2-4: Stats (Weight 0.7)
+        row.addView(createTextView(c2, isHeader, 0.7f, false));
+        row.addView(createTextView(c3, isHeader, 0.7f, false));
+        row.addView(createTextView(c4, isHeader, 0.7f, false));
+
+        // Column 5: Percentage
+        TextView tvPct = createTextView(c5, isHeader, 1.0f, false);
+        if(!isHeader) {
+            float val = Float.parseFloat(c5.replace("%", ""));
+            // Red if danger, Green if safe
+            tvPct.setTextColor(val < currentTargetPct ? Color.parseColor("#FF5252") : Color.parseColor("#69F0AE"));
+            tvPct.setTypeface(null, android.graphics.Typeface.BOLD);
+        }
+        row.addView(tvPct);
+
+        // Column 6: Status (+5 / -3)
+        TextView tvStat = createTextView(c6, isHeader, 0.9f, false);
+        if(!isHeader) {
+            if (c6.startsWith("+")) {
+                tvStat.setTextColor(Color.parseColor("#69F0AE")); // Neon Green
+            } else {
+                tvStat.setTextColor(Color.parseColor("#FF5252")); // Neon Red
+            }
+            tvStat.setTypeface(null, android.graphics.Typeface.BOLD);
+        }
+        row.addView(tvStat);
+
         tableLayout.addView(row);
+
+        // Add a thin separator line if not header
+        if(isHeader) {
+            // Header already has a line in XML
+        }
     }
 
-    private TextView createTextView(String text, boolean bold) {
+    private TextView createTextView(String text, boolean isHeader, float weight, boolean alignLeft) {
         TextView tv = new TextView(this);
         tv.setText(text);
-        tv.setPadding(8, 0, 8, 0);
-        tv.setTextColor(Color.BLACK);
-        if (bold) tv.setTypeface(null, android.graphics.Typeface.BOLD);
+
+        TableRow.LayoutParams params = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, weight);
+        tv.setLayoutParams(params);
+
+        tv.setPadding(5, 0, 5, 0);
+        tv.setGravity(alignLeft ? android.view.Gravity.START : android.view.Gravity.CENTER);
+
+        if (isHeader) {
+            tv.setTextColor(Color.WHITE); // White Header
+            tv.setTypeface(null, android.graphics.Typeface.BOLD);
+            tv.setTextSize(11f);
+        } else {
+            tv.setTextColor(Color.parseColor("#E0E0E0")); // Light Grey Body
+            tv.setTextSize(11f);
+        }
         return tv;
+    }
+
+    private void setupCharts(int grandTotalAttended, int grandTotalClasses, ArrayList<BarEntry> entries, ArrayList<String> labels, ArrayList<PieEntry> pieEntries) {
+        // --- 1. BAR CHART CONFIG ---
+        BarDataSet barSet = new BarDataSet(entries, "Attendance %");
+        barSet.setColor(Color.parseColor("#00E5FF")); // Cyan Bars
+        barSet.setValueTextColor(Color.WHITE); // White Numbers
+        barSet.setValueTextSize(10f);
+
+        BarData barData = new BarData(barSet);
+        barData.setBarWidth(0.5f);
+
+        barChart.setData(barData);
+
+        // Axis Styling for Dark Theme
+        barChart.getXAxis().setTextColor(Color.WHITE);
+        barChart.getAxisLeft().setTextColor(Color.WHITE);
+        barChart.getLegend().setTextColor(Color.WHITE);
+        barChart.getDescription().setEnabled(false);
+
+        // Hide Right Axis & Grid Lines for cleanliness
+        barChart.getAxisRight().setEnabled(false);
+        barChart.getXAxis().setDrawGridLines(false);
+        barChart.getAxisLeft().setGridColor(Color.parseColor("#33FFFFFF"));
+
+        // X-Axis Labels
+        com.github.mikephil.charting.components.XAxis xAxis = barChart.getXAxis();
+        xAxis.setValueFormatter(new com.github.mikephil.charting.formatter.IndexAxisValueFormatter(labels));
+        xAxis.setPosition(com.github.mikephil.charting.components.XAxis.XAxisPosition.BOTTOM);
+        xAxis.setGranularity(1f);
+        xAxis.setLabelRotationAngle(-45);
+
+        barChart.setExtraBottomOffset(20f);
+        barChart.animateY(1000);
+        barChart.invalidate();
+
+        // --- 2. PIE CHART CONFIG ---
+        float totalAvg = (grandTotalClasses == 0) ? 0 : ((float)grandTotalAttended / grandTotalClasses) * 100;
+
+        pieEntries.add(new PieEntry(grandTotalAttended, "Present"));
+        pieEntries.add(new PieEntry(grandTotalClasses - grandTotalAttended, "Absent"));
+
+        PieDataSet pieSet = new PieDataSet(pieEntries, "");
+        // Green & Red colors
+        pieSet.setColors(Color.parseColor("#00E676"), Color.parseColor("#FF5252"));
+        pieSet.setValueTextSize(12f);
+        pieSet.setValueTextColor(Color.WHITE);
+
+        PieData pieData = new PieData(pieSet);
+        pieChart.setData(pieData);
+
+        // Dark Theme Adjustments
+        pieChart.setCenterTextColor(Color.WHITE);
+        pieChart.setHoleColor(Color.TRANSPARENT); // Transparent hole for glass effect
+        pieChart.setEntryLabelColor(Color.WHITE);
+        pieChart.setCenterText("Avg\n" + String.format("%.1f%%", totalAvg));
+        pieChart.setCenterTextSize(16f);
+        pieChart.setHoleRadius(45f);
+        pieChart.getDescription().setEnabled(false);
+        pieChart.getLegend().setEnabled(false);
+        pieChart.invalidate();
     }
 }

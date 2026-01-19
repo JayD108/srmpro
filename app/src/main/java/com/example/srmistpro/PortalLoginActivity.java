@@ -89,20 +89,23 @@ public class PortalLoginActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public void processHTML(String html) {
-            // 5. Parse Data
             List<AppData.Subject> data = HtmlParser.parseAttendance(html);
 
             if (data.isEmpty()) {
                 runOnUiThread(() -> {
-                    Toast.makeText(PortalLoginActivity.this, "Failed to parse data. Try again.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(PortalLoginActivity.this, "Failed to parse. Try again.", Toast.LENGTH_SHORT).show();
                     loadingLayout.setVisibility(View.GONE);
                     isFetching = false;
-                    webView.loadUrl(LOGIN_URL); // Go back
+                    webView.loadUrl(LOGIN_URL);
                 });
             } else {
-                // 6. Success -> Go to Dashboard
+                // --- SECURITY FEATURE: SAVE DATA, NOT CREDENTIALS ---
+                String json = new Gson().toJson(data);
+// NEW CODE (Encrypted)
+                com.example.srmistpro.SecureStore.saveData(PortalLoginActivity.this, "LAST_ATTENDANCE", json);
+
                 Intent intent = new Intent(PortalLoginActivity.this, MainActivity.class);
-                intent.putExtra("data", new Gson().toJson(data));
+                intent.putExtra("data", json);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
                 finish();
