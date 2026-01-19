@@ -22,4 +22,4 @@
 * **AI/OCR:** Google ML Kit
 
 ---
-*Created by [Your Name]*
+*Created by Mrittunjay*
