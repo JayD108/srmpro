@@ -1,15 +1,29 @@
+# Gradle
+.gradle/
+build/
+/captures
+.externalNativeBuild
+.cxx
+
+# Local config (machine-specific / secrets)
+local.properties
+*.jks
+*.keystore
+.env
+
+# IDE
+.idea/
 *.iml
-.gradle
-/local.properties
+.DS_Store
+
+# Release artifacts
+*.apk
+*.aab
+
+# Android Studio caches
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
